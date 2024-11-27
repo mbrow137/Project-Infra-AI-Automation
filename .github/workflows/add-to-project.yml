@@ -32,9 +32,10 @@ jobs:
           const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
 
           for (const pr of prs) {
-            await github.projects.addProjectCard({
-              project_id: projectId,
-              content_id: pr.id,
-              content_type: "PullRequest"
-            });
+            echo pr
+            #await github.projects.addProjectCard({
+              #project_id: projectId,
+              #content_id: pr.id,
+              #content_type: "PullRequest"
+            #});
           }
