@@ -22,13 +22,13 @@ jobs:
           const query = "sort:created-asc is:pr is:open author:jackfrancis author:dtzar author:willie-yao author:mboersma author:jont828 author:nawazkh author:marosset repo:kubernetes-sigs/cluster-api-provider-azure repo:kubernetes-sigs/cluster-api repo:kubernetes-sigs/image-builder repo:kubernetes/autoscaler repo:kubernetes/enhancements repo:kubernetes/kubernetes repo:Azure/aks-engine repo:kubernetes-sigs/cloud-provider-azure repo:kubernetes/perf-tests repo:kubernetes/test-infra repo:Azure/azure-capi-cli-extension"
           const results = await github.rest.search.issuesAndPullRequests({ q: query })
           const prs = JSON.stringify(results.data.items)
-          //const queryproject = `mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {item {id}}}`;
+          const queryproject = `mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {item {id}}}`;
           const variables = {
             projectId: 'PVT_kwHOCAOYJ84AtKVY',
             contentId: '2073279440'
           }
           //for (const pr of prs) {
-          // await github.graphql(queryproject, variables)
+           await github.graphql(queryproject, variables)
           //}
           //console.log(prs)
           //core.setOutput('prs', JSON.stringify(results.data.items));
