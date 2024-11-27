@@ -26,7 +26,7 @@ jobs:
       with:
         #github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          console.log(prs)
+          console.log(${{ steps.search-prs.outputs.prs }})
           //const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
 
           //for (const pr of prs) {
