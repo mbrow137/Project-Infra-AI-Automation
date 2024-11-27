@@ -28,7 +28,7 @@ jobs:
             contentId: '2073279440',
           }
           //for (const pr of prs) {
-          await github.graphql(query, variables)
+          // await github.graphql(query, variables)
           //}
           //console.log(prs)
           //core.setOutput('prs', JSON.stringify(results.data.items));
