@@ -25,7 +25,7 @@ jobs:
           //const queryproject = `mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {item {id}}}`;
           const variables = {
             projectId = 'PVT_kwHOCAOYJ84AtKVY',
-            contentId: '2073279440',
+            contentId: '2073279440'
           }
           //for (const pr of prs) {
           // await github.graphql(queryproject, variables)
