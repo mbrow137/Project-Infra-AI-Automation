@@ -28,7 +28,7 @@ jobs:
       with:
         #github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          #const prs = JSON.parse(core.getInput('prs'));
+          
           const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
 
           for (const pr of prs) {
