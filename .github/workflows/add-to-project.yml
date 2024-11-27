@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: test        
+      run: |
+           env
     - name: Search PRs Matching Query
       id: search-prs
       uses: actions/github-script@v7
