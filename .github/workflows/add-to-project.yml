@@ -33,9 +33,4 @@ jobs:
 
           for (const pr of prs) {
             echo pr
-            #await github.projects.addProjectCard({
-              #project_id: projectId,
-              #content_id: pr.id,
-              #content_type: "PullRequest"
-            #});
           }
