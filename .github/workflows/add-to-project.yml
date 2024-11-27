@@ -23,14 +23,18 @@ jobs:
           const results = await github.rest.search.issuesAndPullRequests({ q: query });
           core.setOutput('prs', JSON.stringify(results.data.items));
 
-    - name: Add PRs to Project
-      uses: actions/github-script@v7
-      with:
-        #github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          
-          const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
-
           for (const pr of prs) {
             echo pr
           }
+
+    #- #name: Add PRs to Project
+      #uses: actions/github-script@v7
+     # with:
+        #github-token: ${{ secrets.GITHUB_TOKEN }}
+        #script: |
+          
+          #const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
+
+          #for (const pr of prs) {
+            #echo pr
+         # }
