@@ -14,14 +14,14 @@ jobs:
       id: search-prs
       uses: actions/github-script@v7
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.PROJECT_TOKEN }}
         script: |
           const query = "sort:created-asc is:pr is:open author:jackfrancis author:dtzar author:willie-yao author:mboersma author:jont828 author:nawazkh author:marosset repo:kubernetes-sigs/cluster-api-provider-azure repo:kubernetes-sigs/cluster-api repo:kubernetes-sigs/image-builder repo:kubernetes/autoscaler repo:kubernetes/enhancements repo:kubernetes/kubernetes repo:Azure/aks-engine repo:kubernetes-sigs/cloud-provider-azure repo:kubernetes/perf-tests repo:kubernetes/test-infra repo:Azure/azure-capi-cli-extension";
           const results = await github.rest.search.issuesAndPullRequests({ q: query });
           const prs = JSON.stringify(results.data.items)
           const projectId = "PVT_kwHOCAOYJ84AtKVY"; # Replace with your project ID
           for (const pr of prs) {
-            await github.rest.projects.addProjectCard({
+            await github.rest.projects.createCard({
               project_id: projectId,
               content_id: pr.id,
               content_type: "PullRequest"
