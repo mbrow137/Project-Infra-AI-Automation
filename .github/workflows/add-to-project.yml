@@ -21,7 +21,6 @@ jobs:
           core.setOutput('prs', JSON.stringify(results.data.items));
           //console.log(JSON.stringify(results.data.items))
           console.log(${{ steps.search-prs.outputs.prs }})
-          env
 
     - name: Add PRs to Project
       uses: actions/github-script@v7
