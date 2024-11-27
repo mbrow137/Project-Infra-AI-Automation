@@ -28,13 +28,13 @@ jobs:
           }`;
             const variables = {
               projectId = "PVT_kwHOCAOYJ84AtKVY",
-              contentId: pr.id,
+              contentId: 2073279440,
             }
             const result = await github.graphql(query, variables)
             console.log(result)
-          for (const pr of prs) {
+          //for (const pr of prs) {
               await github.graphql(query, variables)
-          }
+          //}
           //console.log(prs)
           //core.setOutput('prs', JSON.stringify(results.data.items));
           //console.log(JSON.stringify(results.data.items))
