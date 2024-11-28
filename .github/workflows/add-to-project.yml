@@ -2,7 +2,7 @@ name: Auto Add PRs to Project
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight UTC (adjust as needed)
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
   push:
     branches:
       - main
@@ -19,18 +19,58 @@ jobs:
       with:
         github-token: ${{ secrets.PROJECT_TOKEN }}
         script: |
-          const query = "is:pr is:open author:jackfrancis author:dtzar author:willie-yao author:nojnhuh author:mbrow137 author:mboersma author:jont828 author:nawazkh repo:kubernetes-sigs/cluster-api-provider-azure repo:kubernetes-sigs/cluster-api repo:kubernetes-sigs/image-builder repo:kubernetes/autoscaler repo:kubernetes/enhancements repo:kubernetes/kubernetes repo:kubernetes-sigs/cloud-provider-azure repo:kubernetes/perf-tests repo:kubernetes/test-infra"
-          const results = await github.rest.search.issuesAndPullRequests({ q: query })
-          const prs = JSON.stringify(results.data.items)
-          const queryproject = `mutation AddProjectV2ItemById($projectId: ID!, $contentId: pr.node_id) {addProjectV2ItemById(input: {projectId: $projectId) {item {id}}}`;
-          const variables = {
-            projectId: 'PVT_kwHOCAOYJ84AtKVY'
+          const query = `
+            sort:created-asc
+            is:pr is:open
+            author:jackfrancis author:dtzar author:willie-yao
+            author:mboersma author:jont828 author:nawazkh
+            author:marosset
+            repo:kubernetes-sigs/cluster-api-provider-azure
+            repo:kubernetes-sigs/cluster-api
+            repo:kubernetes-sigs/image-builder
+            repo:kubernetes/autoscaler
+            repo:kubernetes/enhancements
+            repo:kubernetes/kubernetes
+            repo:Azure/aks-engine
+            repo:kubernetes-sigs/cloud-provider-azure
+            repo:kubernetes/perf-tests
+            repo:kubernetes/test-infra
+            repo:Azure/azure-capi-cli-extension
+          `.replace(/\s+/g, ' ').trim(); // Compact query string
+
+          // Step 1: Search PRs
+          const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
+          const prs = results.data.items;
+
+          if (prs.length === 0) {
+            console.log("No PRs found matching the query.");
+            return;
           }
+
+          console.log(`Found ${prs.length} PR(s) to process.`);
+
+          // Step 2: Prepare GraphQL mutation
+          const projectId = "PVT_kwHOCAOYJ84AtKVY";
+          const queryProject = `
+            mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item {
+                  id
+                }
+              }
+            }
+          `;
+
+          // Step 3: Add each PR to the project
           for (const pr of prs) {
-           console.log(pr.node_id)
-           await github.graphql(queryproject, variables)
+            try {
+              const variables = {
+                projectId,
+                contentId: pr.node_id,
+              };
+              const result = await github.graphql(queryProject, variables);
+              console.log(`Successfully added PR #${pr.number} to the project.`);
+            } catch (error) {
+              console.error(`Failed to add PR #${pr.number} to the project: ${error.message}`);
+            }
           }
-          //console.log(prs)
-          //core.setOutput('prs', JSON.stringify(results.data.items));
-          //console.log(JSON.stringify(results.data.items))
-          //console.log(${{ steps.search-prs.outputs.prs }})
