@@ -21,6 +21,7 @@ jobs:
         script: |
           const query = `
             is:issue is:open
+            updated: >2024-09-01
             involves:jackfrancis involves:dtzar involves:willie-yao
             involves:mboersma involves:jont828 involves:nawazkh
             involves:nojnhuh involves:mbrow137
@@ -33,8 +34,14 @@ jobs:
             repo:kubernetes-sigs/cloud-provider-azure
             repo:kubernetes/perf-tests
             repo:kubernetes/test-infra
+            repo:kubernetes/cluster-api-addon-provider-helm
+            repo:kubernetes/azure-service-operator
+            repo:Azure/karpenter-poc
+            repo:kubernetes/autoscaler
+            repo:Azure/dalec-build-defs
+            
+            
           `.replace(/\s+/g, ' ').trim(); // Compact query string
-
           // Step 1: Search Issues
           const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
           const issues = results.data.items;
