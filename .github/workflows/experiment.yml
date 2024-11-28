@@ -58,7 +58,7 @@ jobs:
             }
           `;
 
-          // Step 3: Add each PR to the project
+          // Step 3: Add each issue to the project
           for (const issue of issues) {
             try {
               const variables = {
@@ -66,8 +66,8 @@ jobs:
                 contentId: issue.node_id,
               };
               const result = await github.graphql(queryProject, variables);
-              console.log(`Successfully added Issue #${pr.number} to the project.`);
+              console.log(`Successfully added Issue #${issue.number} to the project.`);
             } catch (error) {
-              console.error(`Failed to add Issue #${pr.number} to the project: ${error.message}`);
+              console.error(`Failed to add Issue #${issue.number} to the project: ${error.message}`);
             }
           }
