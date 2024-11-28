@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # Allow manual runs
 
 jobs:
-  add-prs-to-project:
+  add-issues-to-project:
     runs-on: ubuntu-latest
 
     steps:
@@ -44,7 +44,7 @@ jobs:
             return;
           }
 
-          console.log(`Found ${prs.length} PR(s) to process.`);
+          console.log(`Found ${issues.length} issue(s) to process.`);
 
           // Step 2: Prepare GraphQL mutation
           const projectId = "PVT_kwHOCAOYJ84AtKVY";
