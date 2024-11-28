@@ -21,7 +21,7 @@ jobs:
         script: |
           const query = `
             is:issue is:open
-            updated: >2024-09-01
+            updated:>2024-09-01
             involves:jackfrancis involves:dtzar involves:willie-yao
             involves:mboersma involves:jont828 involves:nawazkh
             involves:nojnhuh involves:mbrow137
