@@ -1,4 +1,4 @@
-name: Auto Add Issues to Project
+name: Auto Add Involved Issues to Project
 
 on:
   schedule:
