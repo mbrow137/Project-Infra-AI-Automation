@@ -1,0 +1,73 @@
+name: Auto Add Issues to Project
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  add-issues-to-project:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Search Issues Matching Query
+      id: search-issues
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        script: |
+          const query = `
+            is:issue is:open
+            mentions:jackfrancis mentions:dtzar mentions:willie-yao
+            mentions:mboersma mentions:jont828 mentions:nawazkh
+            mentions:nojnhuh mentions:mbrow137
+            repo:kubernetes-sigs/cluster-api-provider-azure
+            repo:kubernetes-sigs/cluster-api
+            repo:kubernetes-sigs/image-builder
+            repo:kubernetes/autoscaler
+            repo:kubernetes/enhancements
+            repo:kubernetes/kubernetes
+            repo:kubernetes-sigs/cloud-provider-azure
+            repo:kubernetes/perf-tests
+            repo:kubernetes/test-infra
+          `.replace(/\s+/g, ' ').trim(); // Compact query string
+
+          // Step 1: Search Issues
+          const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
+          const issues = results.data.items;
+
+          if (issues.length === 0) {
+            console.log("No Issues found matching the query.");
+            return;
+          }
+
+          console.log(`Found ${issues.length} issue(s) to process.`);
+
+          // Step 2: Prepare GraphQL mutation
+          const projectId = "PVT_kwHOCAOYJ84AtKVY";
+          const queryProject = `
+            mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item {
+                  id
+                }
+              }
+            }
+          `;
+
+          // Step 3: Add each issue to the project
+          for (const issue of issues) {
+            try {
+              const variables = {
+                projectId,
+                contentId: issue.node_id,
+              };
+              const result = await github.graphql(queryProject, variables);
+              console.log(`Successfully added Issue #${issue.number} to the project.`);
+            } catch (error) {
+              console.error(`Failed to add Issue #${issue.number} to the project: ${error.message}`);
+            }
+          }
