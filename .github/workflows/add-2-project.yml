@@ -3,6 +3,9 @@ name: Auto Add PRs to Project
 on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight UTC
+  push:
+    branches:
+      - main
   workflow_dispatch: # Allow manual runs
 
 jobs:
