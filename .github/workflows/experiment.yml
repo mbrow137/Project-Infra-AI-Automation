@@ -13,14 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Search PRs Matching Query
-      id: search-prs
+    - name: Search Issues Matching Query
+      id: search-issues
       uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.PROJECT_TOKEN }}
         script: |
           const query = `
-            sort:created-asc
             is:issue is:open
             author:jackfrancis author:dtzar author:willie-yao
             author:mboersma author:jont828 author:nawazkh
@@ -36,9 +35,9 @@ jobs:
             repo:kubernetes/test-infra
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
-          // Step 1: Search PRs
+          // Step 1: Search Issues
           const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
-          const prs = results.data.items;
+          const issues = results.data.items;
 
           if (issues.length === 0) {
             console.log("No Issues found matching the query.");
