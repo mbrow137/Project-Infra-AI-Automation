@@ -48,7 +48,7 @@ jobs:
           console.log(`Found ${prs.length} PR(s) to process.`);
 
           // Step 2: Prepare GraphQL mutation
-          const projectId = "PVT_kwHOCAOYJ84AtKVY";
+          const projectId = "PVT_kwHOCAOYJ84AtQGI";
           const queryProject = `
             mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
               addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
