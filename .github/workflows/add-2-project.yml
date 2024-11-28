@@ -1,4 +1,4 @@
-name: Auto Add PRs to Project
+name: Auto Add PRs 2 Project
 
 on:
   schedule:
