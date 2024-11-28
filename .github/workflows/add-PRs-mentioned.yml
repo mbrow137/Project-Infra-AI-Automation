@@ -1,0 +1,73 @@
+name: Auto Add PRs Mentioned in to Project
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  add-prs-to-project:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Search PRs Matching Query
+      id: search-prs
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        script: |
+          const query = `
+            is:pr is:open
+            mentions:jackfrancis mentions:dtzar mentions:willie-yao
+            mentions:mboersma mentions:jont828 mentions:nawazkh
+            mentions:nojnhuh mentions:mbrow137
+            repo:kubernetes-sigs/cluster-api-provider-azure
+            repo:kubernetes-sigs/cluster-api
+            repo:kubernetes-sigs/image-builder
+            repo:kubernetes/autoscaler
+            repo:kubernetes/enhancements
+            repo:kubernetes/kubernetes
+            repo:kubernetes-sigs/cloud-provider-azure
+            repo:kubernetes/perf-tests
+            repo:kubernetes/test-infra
+          `.replace(/\s+/g, ' ').trim(); // Compact query string
+
+          // Step 1: Search PRs
+          const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
+          const prs = results.data.items;
+
+          if (prs.length === 0) {
+            console.log("No PRs found matching the query.");
+            return;
+          }
+
+          console.log(`Found ${prs.length} PR(s) to process.`);
+
+          // Step 2: Prepare GraphQL mutation
+          const projectId = "PVT_kwHOCAOYJ84AtKVY";
+          const queryProject = `
+            mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item {
+                  id
+                }
+              }
+            }
+          `;
+
+          // Step 3: Add each PR to the project
+          for (const pr of prs) {
+            try {
+              const variables = {
+                projectId,
+                contentId: pr.node_id,
+              };
+              const result = await github.graphql(queryProject, variables);
+              console.log(`Successfully added PR #${pr.number} to the project.`);
+            } catch (error) {
+              console.error(`Failed to add PR #${pr.number} to the project: ${error.message}`);
+            }
+          }
