@@ -40,8 +40,8 @@ jobs:
           const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
           const prs = results.data.items;
 
-          if (prs.length === 0) {
-            console.log("No PRs found matching the query.");
+          if (issues.length === 0) {
+            console.log("No Issues found matching the query.");
             return;
           }
 
@@ -60,15 +60,15 @@ jobs:
           `;
 
           // Step 3: Add each PR to the project
-          for (const pr of prs) {
+          for (const issue of issues) {
             try {
               const variables = {
                 projectId,
-                contentId: pr.node_id,
+                contentId: issue.node_id,
               };
               const result = await github.graphql(queryProject, variables);
-              console.log(`Successfully added PR #${pr.number} to the project.`);
+              console.log(`Successfully added Issue #${pr.number} to the project.`);
             } catch (error) {
-              console.error(`Failed to add PR #${pr.number} to the project: ${error.message}`);
+              console.error(`Failed to add Issue #${pr.number} to the project: ${error.message}`);
             }
           }
