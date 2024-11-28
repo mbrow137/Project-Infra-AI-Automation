@@ -21,21 +21,19 @@ jobs:
         script: |
           const query = `
             sort:created-asc
-            is:pr is:open
+            is:issue is:open
             author:jackfrancis author:dtzar author:willie-yao
             author:mboersma author:jont828 author:nawazkh
-            author:marosset
+            author:nojnhuh author:mbrow137
             repo:kubernetes-sigs/cluster-api-provider-azure
             repo:kubernetes-sigs/cluster-api
             repo:kubernetes-sigs/image-builder
             repo:kubernetes/autoscaler
             repo:kubernetes/enhancements
             repo:kubernetes/kubernetes
-            repo:Azure/aks-engine
             repo:kubernetes-sigs/cloud-provider-azure
             repo:kubernetes/perf-tests
             repo:kubernetes/test-infra
-            repo:Azure/azure-capi-cli-extension
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
           // Step 1: Search PRs
