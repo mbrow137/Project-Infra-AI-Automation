@@ -1,4 +1,4 @@
-name: Auto Add PRs to Project
+name: Auto Add Involved PRs to Project
 
 on:
   schedule:
