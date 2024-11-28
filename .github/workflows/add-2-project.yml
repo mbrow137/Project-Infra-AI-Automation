@@ -1,0 +1,45 @@
+name: Auto Add PRs to Project
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC (adjust as needed)
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  add-prs-to-project:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Search PRs Matching Query
+      id: search-prs
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        script: |
+          const query = "sort:created-asc is:pr is:open author:jackfrancis author:dtzar author:willie-yao author:mboersma author:jont828 author:nawazkh author:marosset repo:kubernetes-sigs/cluster-api-provider-azure repo:kubernetes-sigs/cluster-api repo:kubernetes-sigs/image-builder repo:kubernetes/autoscaler repo:kubernetes/enhancements repo:kubernetes/kubernetes repo:Azure/aks-engine repo:kubernetes-sigs/cloud-provider-azure repo:kubernetes/perf-tests repo:kubernetes/test-infra repo:Azure/azure-capi-cli-extension";
+          
+          // Step 1: Search PRs
+          const results = await github.rest.search.issuesAndPullRequests({ q: query });
+          const prs = results.data.items;
+
+          // Step 2: Prepare GraphQL query and variables
+          const projectId = "PVT_kwHOCAOYJ84AtKVY";
+          const queryProject = `
+            mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                item {
+                  id
+                }
+              }
+            }
+          `;
+
+          // Step 3: Add each PR to the project
+          for (const pr of prs) {
+            const variables = {
+              projectId,
+              contentId: pr.node_id,
+            };
+
+            const result = await github.graphql(queryProject, variables);
+            console.log(`Added PR #${pr.number} to project:`, result);
