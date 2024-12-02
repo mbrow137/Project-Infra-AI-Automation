@@ -33,6 +33,7 @@ jobs:
             repo:kubernetes-sigs/cloud-provider-azure
             repo:kubernetes/perf-tests
             repo:kubernetes/test-infra
+            repo:Azure/karpenter-poc
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
           // Step 1: Search Issues
