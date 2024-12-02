@@ -1,21 +1,21 @@
-name: Update Existing PRs in Project (Debugging)
+name: Update Existing Issues in Project (Debugging)
 
 on:
   workflow_dispatch: # Manual trigger only
 
 jobs:
-  update-existing-prs:
+  update-existing-issues:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Update "Involves" Field for Existing PRs with Debugging
+    - name: Update "Involves" Field for Existing Issues with Debugging
       uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.PROJECT_TOKEN }}
         script: |
           const allowedUsers = ["jackfrancis", "dtzar", "willie-yao", "mboersma", "jont828", "nawazkh", "nojnhuh", "mbrow137"];
           const projectId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your project ID
-          const involvesFieldId = "PVTF_lAHOCAOYJ84AtQGIzgkSqIE"; // Replace with your field ID
+          const involvesFieldId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your field ID
 
           // GraphQL query to fetch project items with pagination
           const getProjectItemsQuery = `
@@ -26,7 +26,7 @@ jobs:
                     nodes {
                       id
                       content {
-                        ... on PullRequest {
+                        ... on Issue {
                           number
                           title
                           author {
@@ -88,26 +88,26 @@ jobs:
             console.log(`Processing ${items.length} item(s)...`);
 
             for (const item of items) {
-              if (item.content && item.content.__typename === "PullRequest") {
-                const pr = item.content;
+              if (item.content && item.content.__typename === "Issue") {
+                const issue = item.content;
 
-                // Log PR details for debugging
-                console.log(`PR #${pr.number}: Title: ${pr.title}`);
-                console.log(`PR #${pr.number}: Author: ${pr.author?.login}`);
-                console.log(`PR #${pr.number}: Assignees: ${(pr.assignees.nodes.map(a => a.login) || []).join(', ')}`);
-                console.log(`PR #${pr.number}: Participants: ${(pr.participants.nodes.map(p => p.login) || []).join(', ')}`);
+                // Log Issue details for debugging
+                console.log(`Issue #${issue.number}: Title: ${issue.title}`);
+                console.log(`Issue #${issue.number}: Author: ${issue.author?.login}`);
+                console.log(`Issue #${issue.number}: Assignees: ${(issue.assignees.nodes.map(a => a.login) || []).join(', ')}`);
+                console.log(`Issue #${issue.number}: Participants: ${(issue.participants.nodes.map(p => p.login) || []).join(', ')}`);
 
                 // Collect involved users from allowed list
                 const involvedUsers = [
-                  pr.author?.login, // PR author
-                  ...(pr.assignees.nodes.map(a => a.login) || []), // Assignees
-                  ...(pr.participants.nodes.map(p => p.login) || []), // Mentioned users
+                  issue.author?.login, // Issue author
+                  ...(issue.assignees.nodes.map(a => a.login) || []), // Assignees
+                  ...(issue.participants.nodes.map(p => p.login) || []), // Mentioned users
                 ].filter(user => allowedUsers.includes(user));
 
                 const involvesFieldValue = involvedUsers.join(', ');
 
                 if (involvesFieldValue) {
-                  console.log(`PR #${pr.number}: Involved users to update: ${involvesFieldValue}`);
+                  console.log(`Issue #${issue.number}: Involved users to update: ${involvesFieldValue}`);
                   try {
                     const updateFieldVariables = {
                       projectId,
@@ -116,15 +116,15 @@ jobs:
                       value: involvesFieldValue,
                     };
                     const response = await github.graphql(updateFieldMutation, updateFieldVariables);
-                    console.log(`Successfully updated "involves" field for PR #${pr.number}:`, response);
+                    console.log(`Successfully updated "involves" field for Issue #${issue.number}:`, response);
                   } catch (error) {
-                    console.error(`Failed to update "involves" field for PR #${pr.number}: ${error.message}`);
+                    console.error(`Failed to update "involves" field for Issue #${issue.number}: ${error.message}`);
                   }
                 } else {
-                  console.log(`PR #${pr.number}: No allowed users involved, skipping update.`);
+                  console.log(`Issue #${issue.number}: No allowed users involved, skipping update.`);
                 }
               } else {
-                console.log(`Item ID ${item.id} is not a Pull Request, skipping.`);
+                console.log(`Item ID ${item.id} is not an Issue, skipping.`);
               }
             }
 
@@ -134,3 +134,4 @@ jobs:
           }
 
           console.log("Finished processing all project items.");
+
