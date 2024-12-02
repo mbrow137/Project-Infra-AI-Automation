@@ -1,0 +1,153 @@
+name: Update Involves Field for Issues and PRs
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  update-involves-field:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update "Involves" Field
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        script: |
+          const allowedUsers = ["jackfrancis", "dtzar", "willie-yao", "mboersma", "jont828", "nawazkh", "nojnhuh", "mbrow137"];
+          const projectId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your project ID
+          const involvesFieldId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your field ID
+
+          // GraphQL query to fetch project items
+          const getProjectItemsQuery = `
+            query GetProjectItems($projectId: ID!, $after: String) {
+              node(id: $projectId) {
+                ... on ProjectV2 {
+                  items(first: 100, after: $after) {
+                    nodes {
+                      id
+                      content {
+                        __typename
+                        ... on PullRequest {
+                          number
+                          title
+                          author {
+                            login
+                          }
+                          assignees(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                          participants(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                        }
+                        ... on Issue {
+                          number
+                          title
+                          author {
+                            login
+                          }
+                          assignees(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                          participants(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                        }
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            }
+          `;
+
+          // GraphQL mutation to update the involves field
+          const updateFieldMutation = `
+            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId,
+                itemId: $itemId,
+                fieldId: $fieldId,
+                value: $value
+              }) {
+                projectV2Item {
+                  id
+                }
+              }
+            }
+          `;
+
+          let hasNextPage = true;
+          let cursor = null;
+
+          // Loop through paginated results
+          while (hasNextPage) {
+            const projectItems = await github.graphql(getProjectItemsQuery, { projectId, after: cursor });
+            const items = projectItems.node.items.nodes;
+
+            if (items.length === 0) {
+              console.log("No items found in the project.");
+              return;
+            }
+
+            console.log(`Processing ${items.length} item(s)...`);
+
+            for (const item of items) {
+              if (item.content) {
+                let contentType = item.content.__typename;
+
+                if (contentType === "PullRequest" || contentType === "Issue") {
+                  const content = item.content;
+
+                  // Collect involved users
+                  const involvedUsers = [
+                    content.author?.login, // Author
+                    ...(content.assignees.nodes.map(a => a.login) || []), // Assignees
+                    ...(content.participants.nodes.map(p => p.login) || []) // Participants
+                  ].filter(user => allowedUsers.includes(user));
+
+                  const involvesFieldValue = involvedUsers.join(', ');
+
+                  if (involvesFieldValue) {
+                    console.log(`Updating item ID ${item.id} (${contentType}) with involved users: ${involvesFieldValue}`);
+                    try {
+                      const updateFieldVariables = {
+                        projectId,
+                        itemId: item.id,
+                        fieldId: involvesFieldId,
+                        value: involvesFieldValue,
+                      };
+                      const response = await github.graphql(updateFieldMutation, updateFieldVariables);
+                      console.log(`Successfully updated "involves" field for ${contentType} #${content.number}:`, response);
+                    } catch (error) {
+                      console.error(`Failed to update "involves" field for ${contentType} #${content.number}: ${error.message}`);
+                    }
+                  } else {
+                    console.log(`${contentType} #${content.number} has no allowed users involved, skipping.`);
+                  }
+                } else {
+                  console.log(`Item ID ${item.id} is not a PullRequest or Issue, skipping.`);
+                }
+              } else {
+                console.log(`Item ID ${item.id} has no content.`);
+              }
+            }
+
+            // Check for next page and set the cursor
+            hasNextPage = projectItems.node.items.pageInfo.hasNextPage;
+            cursor = projectItems.node.items.pageInfo.endCursor;
+          }
+
+          console.log("Finished processing all project items.");
