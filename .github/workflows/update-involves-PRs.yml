@@ -15,7 +15,7 @@ jobs:
         script: |
           const allowedUsers = ["jackfrancis", "dtzar", "willie-yao", "mboersma", "jont828", "nawazkh", "nojnhuh", "mbrow137"];
           const projectId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your project ID
-          const involvesFieldId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your field ID
+          const involvesFieldId = "PVTF_lAHOCAOYJ84AtQGIzgkSqIE"; // Replace with your field ID
 
           // GraphQL query to fetch project items with pagination
           const getProjectItemsQuery = `
