@@ -112,14 +112,14 @@ jobs:
                   const content = item.content;
 
                   // Collect involved users
-                  const involvedUsers = [
+                  const involvedUsers = Array.from(new Set([
                     content.author?.login, // Author
-                    ...(content.assignees.nodes.map(a => a.login) || []), // Assignees
-                    ...(content.participants.nodes.map(p => p.login) || []) // Participants
-                  ].filter(user => allowedUsers.includes(user));
+                    ...content.assignees.nodes.map(a => a.login), // Assignees
+                    ...content.participants.nodes.map(p => p.login), // Participants
+                  ].filter(user => allowedUsers.includes(user)))); // Filter and ensure unique users
 
                   if (involvedUsers.length > 0) {
-                    const involvesFieldValue = { text: involvedUsers.join(', ') }; // Wrap in text object
+                    const involvesFieldValue = { text: involvedUsers.join(', ') }; // Convert to a text value
                     console.log(`Updating item ID ${item.id} (${contentType}) with involved users: ${involvesFieldValue.text}`);
                     try {
                       const updateFieldVariables = {
