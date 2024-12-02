@@ -1,4 +1,4 @@
-name: Update Involves Field for Issues and PRs
+name: Update Involves Field for Issues and PRs (Standardized Format)
 
 on:
   workflow_dispatch: # Manual trigger only
@@ -119,8 +119,9 @@ jobs:
                   ].filter(user => allowedUsers.includes(user)))); // Filter and ensure unique users
 
                   if (involvedUsers.length > 0) {
-                    const involvesFieldValue = { text: involvedUsers.join(', ') }; // Convert to a text value
-                    console.log(`Updating item ID ${item.id} (${contentType}) with involved users: ${involvesFieldValue.text}`);
+                    // Format the list with newlines
+                    const involvesFieldValue = { text: involvedUsers.join('\n') }; // Use \n as the separator
+                    console.log(`Updating item ID ${item.id} (${contentType}) with involved users:\n${involvesFieldValue.text}`);
                     try {
                       const updateFieldVariables = {
                         projectId,
