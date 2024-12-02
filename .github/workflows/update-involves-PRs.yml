@@ -1,0 +1,123 @@
+name: Update Existing PRs in Project
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  update-existing-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update "Involves" Field for Existing PRs
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        script: |
+          const allowedUsers = ["jackfrancis", "dtzar", "willie-yao", "mboersma", "jont828", "nawazkh", "nojnhuh", "mbrow137"];
+          const projectId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your project ID
+          const involvesFieldId = "PVT_kwHOCAOYJ84AtQGI"; // Replace with your field ID
+
+          // GraphQL query to fetch project items with pagination
+          const getProjectItemsQuery = `
+            query GetProjectItems($projectId: ID!, $after: String) {
+              node(id: $projectId) {
+                ... on ProjectV2 {
+                  items(first: 100, after: $after) {
+                    nodes {
+                      id
+                      content {
+                        ... on PullRequest {
+                          number
+                          author {
+                            login
+                          }
+                          assignees(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                          participants(first: 10) {
+                            nodes {
+                              login
+                            }
+                          }
+                        }
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            }
+          `;
+
+          // GraphQL mutation to update "involves" field
+          const updateFieldMutation = `
+            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId,
+                itemId: $itemId,
+                fieldId: $fieldId,
+                value: $value
+              }) {
+                projectV2Item {
+                  id
+                }
+              }
+            }
+          `;
+
+          let hasNextPage = true;
+          let cursor = null;
+
+          // Loop through paginated results
+          while (hasNextPage) {
+            const projectItems = await github.graphql(getProjectItemsQuery, { projectId, after: cursor });
+            const items = projectItems.node.items.nodes;
+
+            if (items.length === 0) {
+              console.log("No items found in the project.");
+              return;
+            }
+
+            console.log(`Processing ${items.length} item(s)...`);
+
+            for (const item of items) {
+              if (item.content && item.content.__typename === "PullRequest") {
+                const pr = item.content;
+
+                // Collect involved users from allowed list
+                const involvedUsers = [
+                  pr.author?.login, // PR author
+                  ...(pr.assignees.nodes.map(a => a.login) || []), // Assignees
+                  ...(pr.participants.nodes.map(p => p.login) || []), // Mentioned users
+                ].filter(user => allowedUsers.includes(user));
+
+                const involvesFieldValue = involvedUsers.join(', ');
+
+                if (involvesFieldValue) {
+                  try {
+                    const updateFieldVariables = {
+                      projectId,
+                      itemId: item.id,
+                      fieldId: involvesFieldId,
+                      value: involvesFieldValue,
+                    };
+                    await github.graphql(updateFieldMutation, updateFieldVariables);
+                    console.log(`Updated "involves" field for PR #${pr.number} with: ${involvesFieldValue}`);
+                  } catch (error) {
+                    console.error(`Failed to update "involves" field for PR #${pr.number}: ${error.message}`);
+                  }
+                } else {
+                  console.log(`No allowed users involved in PR #${pr.number}, skipping.`);
+                }
+              }
+            }
+
+            // Check for next page and set the cursor
+            hasNextPage = projectItems.node.items.pageInfo.hasNextPage;
+            cursor = projectItems.node.items.pageInfo.endCursor;
+          }
