@@ -75,7 +75,7 @@ jobs:
 
           // GraphQL mutation to update the involves field
           const updateFieldMutation = `
-            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
               updateProjectV2ItemFieldValue(input: {
                 projectId: $projectId,
                 itemId: $itemId,
@@ -118,16 +118,15 @@ jobs:
                     ...(content.participants.nodes.map(p => p.login) || []) // Participants
                   ].filter(user => allowedUsers.includes(user));
 
-                  const involvesFieldValue = involvedUsers.join(', ');
-
-                  if (involvesFieldValue) {
-                    console.log(`Updating item ID ${item.id} (${contentType}) with involved users: ${involvesFieldValue}`);
+                  if (involvedUsers.length > 0) {
+                    const involvesFieldValue = { text: involvedUsers.join(', ') }; // Wrap in text object
+                    console.log(`Updating item ID ${item.id} (${contentType}) with involved users: ${involvesFieldValue.text}`);
                     try {
                       const updateFieldVariables = {
                         projectId,
                         itemId: item.id,
                         fieldId: involvesFieldId,
-                        value: involvesFieldValue,
+                        value: involvesFieldValue, // Pass the structured value
                       };
                       const response = await github.graphql(updateFieldMutation, updateFieldVariables);
                       console.log(`Successfully updated "involves" field for ${contentType} #${content.number}:`, response);
