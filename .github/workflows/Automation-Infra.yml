@@ -1,4 +1,4 @@
-name: Auto Add Involved PRs to Azure Project 
+name: Auto Add Issues and PRs to Azure Project 
 
 on:
   schedule:
@@ -9,18 +9,18 @@ on:
   workflow_dispatch: # Allow manual runs
 
 jobs:
-  add-prs-to-project:
+  add-items-to-project:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Search PRs Matching Query
-      id: search-prs
+    - name: Search Issues and PRs Matching Query
+      id: search-items
       uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.AZURE_PROJECT_TOKEN }}
         script: |
           const query = `
-            is:pr is:open
+            is:open
             updated:>2024-09-01
             involves:jackfrancis involves:dtzar involves:willie-yao
             involves:mboersma involves:jont828 involves:nawazkh
@@ -42,14 +42,14 @@ jobs:
             repo:kubernetes-sigs/mcs-api
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
-          // Step 1: Search PRs
+          // Step 1: Search Items (Issues and PRs)
           const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
-          const prs = results.data.items;
-          if (prs.length === 0) {
-            console.log("No PRs found matching the query.");
+          const items = results.data.items;
+          if (items.length === 0) {
+            console.log("No issues or PRs found matching the query.");
             return;
           }
-          console.log(`Found ${prs.length} PR(s) to process.`);
+          console.log(`Found ${items.length} item(s) to process.`);
 
           const projectId = "PVT_kwDOAGhwUs4Aq7De";
           const fieldIdInvolves = "PVTF_lADOAGhwUs4Aq7DezgkWelY";
@@ -65,81 +65,4 @@ jobs:
           const queryProjectUpdateField = `
             mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
               updateProjectV2ItemFieldValue(input: {
-                projectId: $projectId,
-                itemId: $itemId,
-                fieldId: $fieldId,
-                value: $value
-              }) {
-                projectV2Item {
-                  id
-                }
-              }
-            }
-          `;
-
-          for (const pr of prs) {
-            try {
-              // Validate that the repository and owner exist
-              if (!pr.repository_url) {
-                console.error(`PR #${pr.number} does not have a valid repository.`);
-                continue;
-              }
-
-              // Extract repository details from the URL
-              const repoUrlParts = pr.repository_url.split("/");
-              const owner = repoUrlParts[repoUrlParts.length - 2];
-              const repo = repoUrlParts[repoUrlParts.length - 1];
-
-              // Fetch detailed PR metadata
-              const prDetails = await github.rest.pulls.get({
-                owner,
-                repo,
-                pull_number: pr.number,
-              });
-
-              // Extract involved users
-              const involvedPeople = new Set();
-
-              // Check author
-              const author = prDetails.data.user?.login;
-              if (author) involvedPeople.add(author);
-
-              // Check assignees
-              prDetails.data.assignees.forEach(assignee => involvedPeople.add(assignee.login));
-
-              // Check requested reviewers
-              prDetails.data.requested_reviewers.forEach(reviewer => involvedPeople.add(reviewer.login));
-
-              // Check mentions in body
-              const bodyMentions = (prDetails.data.body.match(/@\w+/g) || []).map(mention => mention.slice(1));
-              bodyMentions.forEach(mention => involvedPeople.add(mention));
-
-              // Match involved users against query users
-              const queryUsers = [
-                "jackfrancis", "dtzar", "willie-yao",
-                "mboersma", "jont828", "nawazkh",
-                "nojnhuh", "mbrow137"
-              ];
-              const matchedUsers = Array.from(involvedPeople).filter(user => queryUsers.includes(user));
-
-              // Add PR to project
-              const addResult = await github.graphql(queryProjectAdd, {
-                projectId,
-                contentId: pr.node_id,
-              });
-              const itemId = addResult.addProjectV2ItemById.item.id;
-
-              // Update the "Involves" field
-              const involvesValue = { text: matchedUsers.join(", ") };
-              await github.graphql(queryProjectUpdateField, {
-                projectId,
-                itemId,
-                fieldId: fieldIdInvolves,
-                value: involvesValue,
-              });
-              console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue.text}`);
-            } catch (error) {
-              console.error(`Failed to process PR #${pr.number}: ${error.message}`);
-            }
-          }
-
+                projectId: $p
