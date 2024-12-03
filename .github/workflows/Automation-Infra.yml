@@ -92,7 +92,7 @@ jobs:
 
               // Check if the item is a PR or an Issue
               const isPR = item.pull_request !== undefined;
-              let involvedPeople = new Set();
+              const involvedPeople = new Set();
 
               if (isPR) {
                 // Fetch detailed PR metadata
@@ -148,6 +148,6 @@ jobs:
               });
               console.log(`Updated "Involves" field for ${isPR ? 'PR' : 'Issue'} #${item.number} with value: ${involvesValue.text}`);
             } catch (error) {
-              console.error(`Failed to process ${isPR ? 'PR' : 'Issue'} #${item.number}: ${error.message}`);
+              console.error(`Failed to process item #${item.number}: ${error.message}`);
             }
           }
