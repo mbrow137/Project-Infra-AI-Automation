@@ -1,4 +1,4 @@
-name: Auto Add Involved PRs to Azure Project
+name: Auto Add Involved PRs to Azure Project 
 
 on:
   schedule:
@@ -40,24 +40,20 @@ jobs:
             repo:kubernetes/autoscaler
             repo:Azure/dalec-build-defs
             repo:kubernetes-sigs/mcs-api
-            
-            
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
           // Step 1: Search PRs
           const results = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 100 });
           const prs = results.data.items;
-
           if (prs.length === 0) {
             console.log("No PRs found matching the query.");
             return;
           }
-
           console.log(`Found ${prs.length} PR(s) to process.`);
 
-          // Step 2: Prepare GraphQL mutation
           const projectId = "PVT_kwDOAGhwUs4Aq7De";
-          const queryProject = `
+          const fieldIdInvolves = "PVTF_lADOAGhwUs4Aq7DezgkWelY";
+          const queryProjectAdd = `
             mutation AddProjectV2ItemById($projectId: ID!, $contentId: ID!) {
               addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
                 item {
@@ -66,17 +62,57 @@ jobs:
               }
             }
           `;
+          const queryProjectUpdateField = `
+            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId,
+                itemId: $itemId,
+                fieldId: $fieldId,
+                value: $value
+              }) {
+                projectV2Item {
+                  id
+                }
+              }
+            }
+          `;
 
-          // Step 3: Add each PR to the project
           for (const pr of prs) {
             try {
-              const variables = {
+              // Step 2: Add PR to the project
+              const addResult = await github.graphql(queryProjectAdd, {
                 projectId,
                 contentId: pr.node_id,
-              };
-              const result = await github.graphql(queryProject, variables);
-              console.log(`Successfully added PR #${pr.number} to the project.`);
+              });
+              const itemId = addResult.addProjectV2ItemById.item.id;
+
+              // Extract involved people
+              const involvedPeople = [];
+              const involvementKeywords = [
+                "jackfrancis", "dtzar", "willie-yao",
+                "mboersma", "jont828", "nawazkh",
+                "nojnhuh", "mbrow137"
+              ];
+              involvementKeywords.forEach(person => {
+                if (pr.body.includes(person) || pr.title.includes(person)) {
+                  involvedPeople.push(person);
+                }
+              });
+
+              // Step 3: Update the "Involves" field
+              if (involvedPeople.length > 0) {
+                const involvesValue = involvedPeople.join(", ");
+                await github.graphql(queryProjectUpdateField, {
+                  projectId,
+                  itemId,
+                  fieldId: fieldIdInvolves,
+                  value: involvesValue,
+                });
+                console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue}`);
+              } else {
+                console.log(`No matching people found for PR #${pr.number}.`);
+              }
             } catch (error) {
-              console.error(`Failed to add PR #${pr.number} to the project: ${error.message}`);
+              console.error(`Failed to process PR #${pr.number}: ${error.message}`);
             }
           }
