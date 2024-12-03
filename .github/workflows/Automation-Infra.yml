@@ -79,25 +79,47 @@ jobs:
 
           for (const pr of prs) {
             try {
-              // Step 2: Add PR to the project
+              // Fetch detailed PR metadata
+              const prDetails = await github.rest.pulls.get({
+                owner: pr.repository.owner.login,
+                repo: pr.repository.name,
+                pull_number: pr.number,
+              });
+
+              // Extract involved users
+              const involvedPeople = new Set();
+
+              // Check author
+              const author = prDetails.data.user?.login;
+              if (author) involvedPeople.add(author);
+
+              // Check assignees
+              prDetails.data.assignees.forEach(assignee => involvedPeople.add(assignee.login));
+
+              // Check requested reviewers
+              prDetails.data.requested_reviewers.forEach(reviewer => involvedPeople.add(reviewer.login));
+
+              // Check mentions in body
+              const bodyMentions = (prDetails.data.body.match(/@\w+/g) || []).map(mention => mention.slice(1));
+              bodyMentions.forEach(mention => involvedPeople.add(mention));
+
+              // Match involved users against query users
+              const queryUsers = [
+                "jackfrancis", "dtzar", "willie-yao",
+                "mboersma", "jont828", "nawazkh",
+                "nojnhuh", "mbrow137"
+              ];
+              const matchedUsers = Array.from(involvedPeople).filter(user => queryUsers.includes(user));
+
+              // Add PR to project
               const addResult = await github.graphql(queryProjectAdd, {
                 projectId,
                 contentId: pr.node_id,
               });
               const itemId = addResult.addProjectV2ItemById.item.id;
 
-              // Extract involved people from the query parameters
-              const involvementKeywords = [
-                "jackfrancis", "dtzar", "willie-yao",
-                "mboersma", "jont828", "nawazkh",
-                "nojnhuh", "mbrow137"
-              ];
-              const involvedPeople = involvementKeywords.filter(person =>
-                pr.title.includes(person) || pr.body.includes(person)
-              );
-
               // Update the "Involves" field
-              const involvesValue = { text: involvedPeople.join(", ") };
+              const involvesValue = { text: matchedUsers.join(", ") };
               await github.graphql(queryProjectUpdateField, {
                 projectId,
                 itemId,
