@@ -1,4 +1,4 @@
-name: Auto Add Involved PRs to Project
+name: Auto Add Involved PRs to Azure Project
 
 on:
   schedule:
@@ -17,7 +17,7 @@ jobs:
       id: search-prs
       uses: actions/github-script@v7
       with:
-        github-token: ${{ secrets.PROJECT_TOKEN }}
+        github-token: ${{ secrets.AZURE_PROJECT_TOKEN }}
         script: |
           const query = `
             is:pr is:open
