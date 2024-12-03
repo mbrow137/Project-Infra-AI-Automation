@@ -86,33 +86,27 @@ jobs:
               });
               const itemId = addResult.addProjectV2ItemById.item.id;
 
-              // Extract involved people
-              const involvedPeople = [];
+              // Extract involved people from the query parameters
               const involvementKeywords = [
                 "jackfrancis", "dtzar", "willie-yao",
                 "mboersma", "jont828", "nawazkh",
                 "nojnhuh", "mbrow137"
               ];
-              involvementKeywords.forEach(person => {
-                if (pr.body.includes(person) || pr.title.includes(person)) {
-                  involvedPeople.push(person);
-                }
-              });
+              const involvedPeople = involvementKeywords.filter(person =>
+                pr.title.includes(person) || pr.body.includes(person)
+              );
 
-              // Step 3: Update the "Involves" field
-              if (involvedPeople.length > 0) {
-                const involvesValue = involvedPeople.join(", ");
-                await github.graphql(queryProjectUpdateField, {
-                  projectId,
-                  itemId,
-                  fieldId: fieldIdInvolves,
-                  value: involvesValue,
-                });
-                console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue}`);
-              } else {
-                console.log(`No matching people found for PR #${pr.number}.`);
-              }
+              // Update the "Involves" field
+              const involvesValue = involvedPeople.join(", ");
+              await github.graphql(queryProjectUpdateField, {
+                projectId,
+                itemId,
+                fieldId: fieldIdInvolves,
+                value: involvesValue,
+              });
+              console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue}`);
             } catch (error) {
               console.error(`Failed to process PR #${pr.number}: ${error.message}`);
             }
           }
+
