@@ -39,6 +39,7 @@ jobs:
             repo:Azure/karpenter-poc
             repo:kubernetes/autoscaler
             repo:Azure/dalec-build-defs
+            repo:kubernetes/mcs-api
             
             
           `.replace(/\s+/g, ' ').trim(); // Compact query string
