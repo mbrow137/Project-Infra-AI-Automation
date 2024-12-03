@@ -63,7 +63,7 @@ jobs:
             }
           `;
           const queryProjectUpdateField = `
-            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+            mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
               updateProjectV2ItemFieldValue(input: {
                 projectId: $projectId,
                 itemId: $itemId,
@@ -97,14 +97,14 @@ jobs:
               );
 
               // Update the "Involves" field
-              const involvesValue = involvedPeople.join(", ");
+              const involvesValue = { text: involvedPeople.join(", ") };
               await github.graphql(queryProjectUpdateField, {
                 projectId,
                 itemId,
                 fieldId: fieldIdInvolves,
                 value: involvesValue,
               });
-              console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue}`);
+              console.log(`Updated "Involves" field for PR #${pr.number} with value: ${involvesValue.text}`);
             } catch (error) {
               console.error(`Failed to process PR #${pr.number}: ${error.message}`);
             }
