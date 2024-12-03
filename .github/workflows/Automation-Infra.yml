@@ -1,4 +1,4 @@
-name: Auto Add PRs to Infra Project
+name: Auto Add Involved PRs to Project
 
 on:
   schedule:
@@ -20,11 +20,11 @@ jobs:
         github-token: ${{ secrets.PROJECT_TOKEN }}
         script: |
           const query = `
-            sort:created-asc
             is:pr is:open
-            author:jackfrancis author:dtzar author:willie-yao
-            author:mboersma author:jont828 author:nawazkh
-            author:nojnhuh author:mbrow137
+            updated:>2024-09-01
+            involves:jackfrancis involves:dtzar involves:willie-yao
+            involves:mboersma involves:jont828 involves:nawazkh
+            involves:nojnhuh involves:mbrow137
             repo:kubernetes-sigs/cluster-api-provider-azure
             repo:kubernetes-sigs/cluster-api
             repo:kubernetes-sigs/image-builder
@@ -34,6 +34,14 @@ jobs:
             repo:kubernetes-sigs/cloud-provider-azure
             repo:kubernetes/perf-tests
             repo:kubernetes/test-infra
+            repo:kubernetes/cluster-api-addon-provider-helm
+            repo:kubernetes/azure-service-operator
+            repo:Azure/karpenter-poc
+            repo:kubernetes/autoscaler
+            repo:Azure/dalec-build-defs
+            repo:kubernetes-sigs/mcs-api
+            
+            
           `.replace(/\s+/g, ' ').trim(); // Compact query string
 
           // Step 1: Search PRs
