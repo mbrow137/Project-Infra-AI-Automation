@@ -65,4 +65,89 @@ jobs:
           const queryProjectUpdateField = `
             mutation UpdateProjectV2ItemFieldValue($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
               updateProjectV2ItemFieldValue(input: {
-                projectId: $p
+                projectId: $projectId,
+                itemId: $itemId,
+                fieldId: $fieldId,
+                value: $value
+              }) {
+                projectV2Item {
+                  id
+                }
+              }
+            }
+          `;
+
+          for (const item of items) {
+            try {
+              // Validate that the repository URL exists
+              if (!item.repository_url) {
+                console.error(`Item #${item.number} does not have a valid repository.`);
+                continue;
+              }
+
+              // Extract repository details from the URL
+              const repoUrlParts = item.repository_url.split("/");
+              const owner = repoUrlParts[repoUrlParts.length - 2];
+              const repo = repoUrlParts[repoUrlParts.length - 1];
+
+              // Check if the item is a PR or an Issue
+              const isPR = item.pull_request !== undefined;
+              let involvedPeople = new Set();
+
+              if (isPR) {
+                // Fetch detailed PR metadata
+                const prDetails = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: item.number,
+                });
+
+                // Extract involved people for PR
+                involvedPeople.add(prDetails.data.user?.login); // Author
+                prDetails.data.assignees.forEach(assignee => involvedPeople.add(assignee.login)); // Assignees
+                prDetails.data.requested_reviewers.forEach(reviewer => involvedPeople.add(reviewer.login)); // Reviewers
+                const bodyMentions = (prDetails.data.body.match(/@\w+/g) || []).map(mention => mention.slice(1));
+                bodyMentions.forEach(mention => involvedPeople.add(mention)); // Mentions
+              } else {
+                // Fetch detailed Issue metadata
+                const issueDetails = await github.rest.issues.get({
+                  owner,
+                  repo,
+                  issue_number: item.number,
+                });
+
+                // Extract involved people for Issue
+                involvedPeople.add(issueDetails.data.user?.login); // Author
+                issueDetails.data.assignees.forEach(assignee => involvedPeople.add(assignee.login)); // Assignees
+                const bodyMentions = (issueDetails.data.body.match(/@\w+/g) || []).map(mention => mention.slice(1));
+                bodyMentions.forEach(mention => involvedPeople.add(mention)); // Mentions
+              }
+
+              // Match involved users against query users
+              const queryUsers = [
+                "jackfrancis", "dtzar", "willie-yao",
+                "mboersma", "jont828", "nawazkh",
+                "nojnhuh", "mbrow137"
+              ];
+              const matchedUsers = Array.from(involvedPeople).filter(user => queryUsers.includes(user));
+
+              // Add the item to the project
+              const addResult = await github.graphql(queryProjectAdd, {
+                projectId,
+                contentId: item.node_id,
+              });
+              const itemId = addResult.addProjectV2ItemById.item.id;
+
+              // Update the "Involves" field
+              const involvesValue = { text: matchedUsers.join(", ") };
+              await github.graphql(queryProjectUpdateField, {
+                projectId,
+                itemId,
+                fieldId: fieldIdInvolves,
+                value: involvesValue,
+              });
+              console.log(`Updated "Involves" field for ${isPR ? 'PR' : 'Issue'} #${item.number} with value: ${involvesValue.text}`);
+            } catch (error) {
+              console.error(`Failed to process ${isPR ? 'PR' : 'Issue'} #${item.number}: ${error.message}`);
+            }
+          }
