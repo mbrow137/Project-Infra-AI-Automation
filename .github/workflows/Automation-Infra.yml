@@ -79,10 +79,21 @@ jobs:
 
           for (const pr of prs) {
             try {
+              // Validate that the repository and owner exist
+              if (!pr.repository_url) {
+                console.error(`PR #${pr.number} does not have a valid repository.`);
+                continue;
+              }
+
+              // Extract repository details from the URL
+              const repoUrlParts = pr.repository_url.split("/");
+              const owner = repoUrlParts[repoUrlParts.length - 2];
+              const repo = repoUrlParts[repoUrlParts.length - 1];
+
               // Fetch detailed PR metadata
               const prDetails = await github.rest.pulls.get({
-                owner: pr.repository.owner.login,
-                repo: pr.repository.name,
+                owner,
+                repo,
                 pull_number: pr.number,
               });
 
